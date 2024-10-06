@@ -1,36 +1,47 @@
 import os.path
+from sys import platform
+
+from pygame.rect import Rect
+
+from settings import WIN_WIDTH, WIN_HEIGHT, DISP, BACK_COLOR, FPS, SCREEN_START, ICON_DIR
+
 import pygame
 from pygame.color import Color
-from pygame.constants import KEYDOWN
+from pygame.constants import KEYDOWN, QUIT
+from pygame.constants import KEYUP
 from pygame.surface import Surface
 
-WIN_WIDTH = 800
-WIN_HEIGHT = 640
-DISP = (WIN_WIDTH, WIN_HEIGHT)
-BACK_COLOR = '#000000'
-FPS = 60
-FILE_DIR = os.path.dirname(__file__)
+
 
 
 class Camera:
-    def __init__(self):
-        pass
+    def __init__(self, camera_fn, width, height):
+        self.camera_fn = camera_fn
+        self.state = Rect(0, 0, width, height)
 
-    def apply_camera(self):
-        pass
+    def apply(self, target):
+        return target.rect.move(self.state.topleft)
 
-    def update_camera(self):
-        pass
+    def update(self):
+        self.state = self.camera_fn(self.state, target.rect)
 
 
 def camera_config(camera, target_rect):
-    pass
+    l, t, _, _ = target_rect
+    _, _, w, h = camera
+    l, t = -l + WIN_WIDTH / 2, -t + WIN_HEIGHT / 2
 
-def new_level():
+    l = min(0, l)
+    l = max(-(camera.width - WIN_WIDTH), l)
+    t = min(0, t)
+    t = max(-(camera.width - WIN_HEIGHT), t)
+    return Rect(l, t, w, h)
+
+def load_level():
     pass
 
 def main():
-    new_level()
+    load_level()
     pygame.init()
     screen = pygame.display.set_mode(DISP)
     pygame.display.set_caption('Super Mario Game / Yemelianov Oleh')
@@ -46,7 +57,6 @@ def main():
     x = y = 0
 
     while not hero.winner:
-        timer.tick(FPS)
         for event in pygame.event.get():
             if event.type == QUIT:
                 raise SystemExit('QUIT')
@@ -69,5 +79,32 @@ def main():
                 if event.key == pygame.K_LSHIFT:
                     running = True
 
+            if event.type == KEYUP:
+                if event.key == pygame.K_UP:
+                    up = False
+                if event.key == pygame.K_LEFT:
+                    left = False
+                if event.key == pygame.K_RIGHT:
+                    right = False
+                if event.key == pygame.K_LSHIFT:
+                    running = False
 
+        screen.blit(bg, SCREEN_START)
 
+        monsters.update(platform)
+        camera.update()
+        hero.update(left, right, up, running, platform)
+        for event in entities:
+            screen.blit(event.image, camera.apply())
+
+        timer.tick(FPS)
+        pygame.display.update()
+
+level = []
+platform = []
+entities = pygame.sprite.Group()
+animated_entities = pygame.sprite.Group()
+monsters = pygame.sprite.Group()
+
+if __name__ == '__main__':
+    main()
